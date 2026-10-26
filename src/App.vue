@@ -1,56 +1,30 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref, watch } from 'vue'
 
-let id = 0
+const todoId = ref(1)
+const todoData = ref(null)
 
-type Todo = {
-  id: number
-  text: string
-  done?: boolean
+async function fetchData() {
+  // 出力されるDOM要素の部分を一度nullにする⇒v-ifの要素が表示
+  todoData.value = null
+
+  const res = await fetch(`https://jsonplaceholder.typicode.com/todos/${todoId.value}`)
+  // レスポンスをtodoData.valueに代入してDOM要素の更新⇒v-elseの要素が表示
+  todoData.value = await res.json()
 }
 
-const newTodo = ref('')
-const hideCompletedTodos = ref(false)
-const todos = ref([
-  { id: id++, text: 'Learn HTML', done: false },
-  { id: id++, text: 'Learn JS', done: false },
-  { id: id++, text: 'Learn Vue', done: false },
-])
+// 初回のデータを取得する
+fetchData()
 
-const filteredTodos = computed(() => {
-  return hideCompletedTodos.value ? todos.value.filter((t) => !t.done) : todos.value
-})
-
-function addTodo() {
-  todos.value.push({ id: id++, text: newTodo.value, done: false })
-  newTodo.value = ''
-}
-
-function removeTodo(todo: Todo) {
-  todos.value = todos.value.filter((t) => t !== todo)
-}
+//watch(監視するデータ, 変更されたときに実行する関数)
+//todoIdが変わったらfetchDataを実行してねーという意味
+watch(todoId, fetchData)
 </script>
 
 <template>
-  <form @submit.prevent="addTodo">
-    <input v-model="newTodo" required placeholder="やることを書いてみよう！" />
-    <button>リストに追加！</button>
-  </form>
-  <h2>現在のやることリスト一覧</h2>
-  <ul>
-    <li v-for="todo in filteredTodos" :key="todo.id">
-      <input type="checkbox" v-model="todo.done" />
-      <span :class="{ done: todo.done }">{{ todo.text }}</span>
-      <button @click="removeTodo(todo)">削除</button>
-    </li>
-  </ul>
-  <button @click="hideCompletedTodos = !hideCompletedTodos">
-    {{ hideCompletedTodos ? 'すべて表示' : '完了済みタスクを隠す' }}
-  </button>
+  <p>Todo id: {{ todoId }}</p>
+  <button @click="todoId++" :disabled="!todoData">Fetch next todo</button>
+  <!-- null担っている間はv-ifが表示される -->
+  <p v-if="!todoData">Loading...</p>
+  <pre v-else>{{ todoData }}</pre>
 </template>
-
-<style>
-.done {
-  text-decoration: line-through;
-}
-</style>
