@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const props = defineProps({
-  msg: String,
-})
+const emit = defineEmits(['response2'])
+
+emit('response2', 'hello from child')
 </script>
 
 <template>
-  <h2>{{ msg || 'No props passed yet' }}</h2>
+  <h2>Child Component</h2>
 </template>
