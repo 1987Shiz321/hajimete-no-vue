@@ -1,57 +1,78 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-// ここに処理を実装する
-const maxValue = 10
-const minValue = 0
-//refで状態を管理する
-const count = ref(0)
+type Todo = {
+  id: number
+  text: string
+  isCompleted: boolean
+}
 
-//messageはcountの状態によって定められるのでcomputedを使う
-const message = computed(() => {
-  if (count.value === maxValue) {
-    return '最大値に到達しています'
-  }
+let id = 0
+//ここにはタスク名だけが入る
+const newTodo = ref('')
+//完了済みのタスクを表示するかのトグル
+const isDisplayCompleted = ref(true)
 
-  if (count.value === minValue) {
-    return '最小値に到達しています'
-  }
+//タスク一覧
+const todos = ref<Todo[]>([
+  { id: id++, text: 'Vueの配列操作を学ぶ', isCompleted: false },
+  { id: id++, text: 'Lesson 1を復習する', isCompleted: false },
+  { id: id++, text: 'TypeScriptの型を定義する', isCompleted: false },
+])
 
-  return `あと${maxValue - count.value}回増やせます`
+//タスク一覧(フィルター用)
+const filteredTodos = computed(() => {
+  return isDisplayCompleted.value ? todos.value : todos.value.filter((t) => !t.isCompleted)
 })
 
-function increment() {
-  if (count.value < maxValue) {
-    count.value++
+const completedTasks = computed(() => {
+  return todos.value.filter((t) => t.isCompleted).length
+})
+
+function addTodo() {
+  //空白のみのTodo名を弾く
+  if (newTodo.value.trim() !== '') {
+    todos.value.push({ id: id++, text: newTodo.value.trim(), isCompleted: false })
+    newTodo.value = ''
   }
 }
 
-function decrement() {
-  if (count.value > minValue) {
-    count.value--
-  }
-}
-
-function reset() {
-  count.value = 0
+function removeTodo(todo: Todo) {
+  todos.value = todos.value.filter((t) => t.id !== todo.id)
 }
 </script>
 
 <template>
   <main>
-    <h1>Vue Counter</h1>
+    <h1>My Todo List</h1>
+
+    <form @submit.prevent="addTodo">
+      <input v-model="newTodo" required placeholder="新しいTodoを入力..." />
+      <button>追加</button>
+    </form>
+
+    <button @click="isDisplayCompleted = !isDisplayCompleted">
+      {{ isDisplayCompleted ? '完了済みタスクを隠す' : '完了済みタスクを表示する' }}
+    </button>
 
     <!-- ここにUIを実装する -->
-    <div>
-      <p>{{ count }}</p>
-      <button @click="decrement" :disabled="count === minValue">-</button>
-      <button @click="increment" :disabled="count === maxValue">+</button>
-      <button @click="reset" :disabled="count === minValue">reset</button>
-      <p>{{ message }}</p>
-    </div>
+    <ul>
+      <li v-for="todo in filteredTodos" :key="todo.id">
+        <input type="checkbox" v-model="todo.isCompleted" />
+        <span :class="{ isCompleted: todo.isCompleted }">{{ todo.text }}</span>
+        <button @click="removeTodo(todo)">削除</button>
+      </li>
+    </ul>
+
+    <p>全タスク:{{ todos.length }}件</p>
+    <p>完了済み:{{ completedTasks }}件</p>
+    <p>未完了:{{ todos.length - completedTasks }}件</p>
   </main>
 </template>
 
 <style>
 /* 必要であれば自由にスタイリングしてOK */
+.isCompleted {
+  text-decoration: line-through;
+}
 </style>
